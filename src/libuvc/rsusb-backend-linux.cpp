@@ -5,6 +5,7 @@
 #include "types.h"
 #include "../polling-device-watcher.h"
 #include "../uvc/uvc-device.h"
+#include "../libusb/device-watcher-libusb.h"
 
 namespace librealsense
 {
@@ -17,7 +18,7 @@ namespace librealsense
 
         std::shared_ptr<device_watcher> rs_backend_linux::create_device_watcher() const
         {
-            return std::make_shared<polling_device_watcher>(this);
+            return std::make_shared<device_watcher_libusb>(this);
         }
     }
 }

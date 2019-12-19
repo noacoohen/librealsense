@@ -29,6 +29,8 @@ namespace librealsense
             libusb_device* get_device(uint8_t index);
 
         private:
+            void update_device_list();
+
             std::mutex _mutex;
             libusb_device **_list;
             size_t _count;
@@ -37,5 +39,7 @@ namespace librealsense
             int _kill_handler_thread = 0;
             std::thread _event_handler;
         };
+
+        const std::shared_ptr<usb_context> get_usb_context();
     }
 }

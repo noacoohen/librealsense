@@ -15,12 +15,19 @@ namespace librealsense
             {
                 LOG_ERROR("libusb_init failed");
             }
-            _count = libusb_get_device_list(_ctx, &_list);
+            update_device_list();
         }
         
+        void usb_context::update_device_list()
+        {
+            if(_list)
+                libusb_free_device_list(_list, true);
+            _count = libusb_get_device_list(_ctx, &_list);
+        }
+
         usb_context::~usb_context()
         {
-            libusb_free_device_list(_list, true);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    libusb_free_device_list(_list, true);
             assert(_handler_requests == 0); // we need the last libusb_close to trigger an event to stop the event thread
             if (_event_handler.joinable())
                 _event_handler.join();
@@ -65,7 +72,15 @@ namespace librealsense
         
         size_t usb_context::device_count()
         {
+            update_device_list();
             return _count;
+        }
+
+        static std::shared_ptr<usb_context> _context;
+        const std::shared_ptr<usb_context> get_usb_context()
+        {
+            if(!_context) _context = std::make_shared<usb_context>();
+            return _context;
         }
     }
 }
