@@ -339,42 +339,13 @@ namespace rs2
         int selected_depth_source = -1;
         std::vector<std::string> depth_sources_str;
         std::vector<int> depth_sources;
-        int i = 0;
-        for (auto&& s : streams)
-        {
-            if (s.second.is_stream_visible() &&
-                s.second.profile.stream_type() == RS2_STREAM_DEPTH)
-            {
-                auto stream_origin_iter = streams_origin.find(s.second.profile.unique_id());
-                if (selected_depth_source_uid == -1)
-                {
-                    if ( stream_origin_iter != streams_origin.end() &&
-                        streams.find( stream_origin_iter->second ) != streams.end())
-                    {
-                        selected_depth_source_uid = stream_origin_iter->second;
-                    }
-                }
-                if ( stream_origin_iter != streams_origin.end() && stream_origin_iter->second == selected_depth_source_uid)
-                {
-                    selected_depth_source = i;
-                }
-
-                depth_sources.push_back(s.second.profile.unique_id());
-
-                auto dev_name = s.second.dev ? s.second.dev->dev.get_info(RS2_CAMERA_INFO_NAME) : "Unknown";
-                auto stream_name = rs2_stream_to_string(s.second.profile.stream_type());
-
-                depth_sources_str.push_back( rsutils::string::from() << dev_name << " " << stream_name );
-
-                i++;
-            }
-        }
+        init_depth_uid(selected_depth_source, depth_sources_str, depth_sources);
 
         int selected_tex_source = 0;
         std::vector<std::string> tex_sources_str;
         std::vector<int> tex_sources;
         std::vector<rs2::stream_profile> tex_profiles;
-        i = 0;
+        int i = 0;
         for (auto&& s : streams)
         {
             if (s.second.is_stream_visible() &&
@@ -1356,16 +1327,6 @@ namespace rs2
                     continue;
                 }
 
-                if( f.is< pose_frame >() )  // Aggregate the trajectory in pause mode to make the
-                                            // path consistent
-                {
-                    auto dev = streams[f.get_profile().unique_id()].dev;
-                    if( dev )
-                    {
-                        dev->tm2.update_model_trajectory( f.as< pose_frame >(), ! paused );
-                    }
-                }
-
                 auto texture = upload_frame( std::move( f ) );
 
                 if( ( selected_tex_source_uid == -1 && f.get_profile().format() == RS2_FORMAT_Z16 )
@@ -1493,7 +1454,7 @@ namespace rs2
             top_y_ruler = s_model.curr_info_rect.y + s_model.curr_info_rect.h + ruler_distance_offset;
         }
 
-        static const auto left_x_colored_ruler_offset = 50;
+        static const auto left_x_colored_ruler_offset = 55;
         static const auto colored_ruler_width = 20;
         const auto left_x_colored_ruler = stream_width - left_x_colored_ruler_offset;
         const auto right_x_colored_ruler = stream_width - (left_x_colored_ruler_offset - colored_ruler_width);
@@ -2010,67 +1971,6 @@ namespace rs2
             { 0 , 0, 1, 0 },
             { 0, 0, 0, 1 }
         };
-        rs2::matrix4 rx(_rx);
-        rs2::matrix4 rz(_rz);
-
-        int stream_num = 0; // counter to locate the pose info window correctly (currently works for up to 3 streaming devices)
-        pose_frame pose = frame{};
-        for (auto&& stream : streams)
-        {
-            if (stream.second.profile.stream_type() == RS2_STREAM_POSE)
-            {
-                auto f = stream.second.texture->get_last_frame();
-                if (!f.is<pose_frame>())
-                {
-                    continue;
-                }
-
-                pose = f;
-                rs2_pose pose_data = pose.get_pose_data();
-
-                auto t = pose_to_world_transformation(pose_data);
-                float model[4][4];
-                t.to_column_major((float*)model);
-                auto m = model;
-
-                r1 = m * rx;
-                r2 = rz * m * rx;
-
-                // set the pose transformation as the model matrix to draw the axis
-                glMatrixMode(GL_MODELVIEW);
-                glPushMatrix();
-                glLoadMatrixf(view);
-
-                glMultMatrixf((float*)_rx);
-
-                streams[f.get_profile().unique_id()].dev->tm2.draw_trajectory( false );
-
-                // remove model matrix from the rest of the render
-                glPopMatrix();
-
-                _cam_renderer.set_matrix(RS2_GL_MATRIX_CAMERA, r2 * view_mat);
-                _cam_renderer.set_matrix(RS2_GL_MATRIX_PROJECTION, perspective_mat);
-
-                if (f)
-                {
-                    glDisable(GL_DEPTH_TEST);
-                    glEnable(GL_BLEND);
-
-                    glBlendFunc(GL_ONE, GL_ONE);
-
-                    // Render camera model (based on source_frame camera type)
-                    f.apply_filter(_cam_renderer);
-
-                    glDisable(GL_BLEND);
-                    glEnable(GL_DEPTH_TEST);
-                }
-
-                stream_num++;
-            }
-        }
-
-
-        check_gl_error();
 
         {
             float tiles = 24;
@@ -2104,7 +2004,7 @@ namespace rs2
 
         check_gl_error();
 
-        if (!pose && !_pc_selected)
+        if (!_pc_selected)
         {
             glMatrixMode(GL_MODELVIEW);
             glPushMatrix();
@@ -3419,5 +3319,40 @@ namespace rs2
         }
 
         return results;
+    }
+
+    void viewer_model::init_depth_uid(int& selected_depth_source, std::vector<std::string>& depth_sources_str, std::vector<int>& depth_sources)
+    {
+        int i = 0;
+
+        for (auto&& s : streams)
+        {
+            if (s.second.is_stream_visible() &&
+                s.second.profile.stream_type() == RS2_STREAM_DEPTH)
+            {
+                auto stream_origin_iter = streams_origin.find(s.second.profile.unique_id());
+                if (selected_depth_source_uid == -1)
+                {
+                    if (stream_origin_iter != streams_origin.end() &&
+                        streams.find(stream_origin_iter->second) != streams.end())
+                    {
+                        selected_depth_source_uid = stream_origin_iter->second;
+                    }
+                }
+                if (stream_origin_iter != streams_origin.end() && stream_origin_iter->second == selected_depth_source_uid)
+                {
+                    selected_depth_source = i;
+                }
+
+                depth_sources.push_back(s.second.profile.unique_id());
+
+                auto dev_name = s.second.dev ? s.second.dev->dev.get_info(RS2_CAMERA_INFO_NAME) : "Unknown";
+                auto stream_name = rs2_stream_to_string(s.second.profile.stream_type());
+
+                depth_sources_str.push_back(rsutils::string::from() << dev_name << " " << stream_name);
+
+                i++;
+            }
+        }
     }
 }
