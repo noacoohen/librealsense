@@ -13,6 +13,7 @@
 
 #include "device-model.h"
 #include "os.h"
+#include <rsutils/os/os.h>
 
 // We use STB image to load the splash-screen from memory
 #define STB_IMAGE_IMPLEMENTATION
@@ -86,7 +87,7 @@ namespace rs2
         std::string path;
         try
         {
-            path = get_folder_path(special_folder::user_documents);
+            path = rsutils::os::get_folder_path(rsutils::os::special_folder::user_documents);
         }
         catch (const std::exception&)
         {

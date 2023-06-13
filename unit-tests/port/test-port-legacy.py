@@ -2,6 +2,7 @@
 # Copyright(c) 2023 Intel Corporation. All Rights Reserved.
 
 import pyrealsense2 as rs
+import pyrsutils as rsutils
 from rspy import test
 from threading import Thread
 import tempfile
@@ -50,7 +51,6 @@ vs.intrinsics = intrinsics
 software_sensor.add_video_stream(vs)
 
 profiles = software_sensor.get_stream_profiles()
-print(profiles)
 depth = profiles[0].as_video_stream_profile()
 
 sync = rs.syncer()
@@ -94,6 +94,23 @@ for i in range(expected_frames):
     for j in range(W*H):
         frame_data_units_transformed = (origin_frame[j] * depth_unit)
         test.check_equal(ut_frame[j], frame_data_units_transformed)
+
+test.finish()
+################################################################################################
+test.start("Test Motion Module Extension")
+
+ctx = rs.context()
+folder_name = rsutils.get_folder_path(rsutils.special_folder.temp_folder)
+filename = folder_name + "D435i_Depth_and_IMU.bag"
+dev = ctx.load_device(filename)
+dev.set_real_time(False)
+
+sync = rs.syncer()
+sensors = dev.query_sensors()
+for s in sensors:
+    test.check_equal((s.get_info(rs.camera_info.name) == 'Stereo Module'), s.is_depth_sensor())
+    test.check_equal((s.get_info(rs.camera_info.name) == 'RGB Camera'), s.is_color_sensor())
+    test.check_equal((s.get_info(rs.camera_info.name) == 'Motion Module'), s.is_motion_sensor())
 
 test.finish()
 ################################################################################################

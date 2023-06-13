@@ -11,6 +11,7 @@
 
 #include "viewer.h"
 #include "os.h"
+#include <rsutils/os/os.h>
 
 #include "udev-rules.h"
 
@@ -764,7 +765,7 @@ namespace rs2
 
             if (create_file)
             {
-                std::string tmp_filename = rsutils::string::from() << get_folder_path(special_folder::app_data) << "/.99-realsense-libusb.rules";
+                std::string tmp_filename = rsutils::string::from() << rsutils::os::get_folder_path(rsutils::os::special_folder::app_data) << "/.99-realsense-libusb.rules";
 
                 std::ofstream out(tmp_filename.c_str());
                 out << realsense_udev_rules;

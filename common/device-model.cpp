@@ -416,7 +416,7 @@ namespace rs2
 
         refresh_notifications(viewer);
 
-        auto path = get_folder_path( special_folder::user_documents );
+        auto path = rsutils::os::get_folder_path(rsutils::os::special_folder::user_documents );
         path += "librealsense2/presets/";
         try
         {

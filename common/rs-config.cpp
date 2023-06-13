@@ -10,6 +10,7 @@
 #include <fstream>
 
 #include "os.h"
+#include <rsutils/os/os.h>
 
 using json = nlohmann::json;
 
@@ -88,7 +89,7 @@ void config_file::save(const char* filename)
 
 config_file& config_file::instance()
 {
-    static config_file inst(get_folder_path(rs2::special_folder::app_data) 
+    static config_file inst(rsutils::os::get_folder_path(rsutils::os::special_folder::app_data)
                             + std::string("realsense-config.json"));
     return inst;
 }

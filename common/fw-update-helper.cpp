@@ -7,6 +7,7 @@
 #include "ux-window.h"
 
 #include "os.h"
+#include <rsutils/os/os.h>
 
 #include <map>
 #include <vector>
@@ -260,7 +261,7 @@ namespace rs2
                     _progress = ((ceil(progress * 5) / 5) * (30 - next_progress)) + next_progress;
                 });
 
-                auto temp = get_folder_path(special_folder::app_data);
+                auto temp = rsutils::os::get_folder_path(rsutils::os::special_folder::app_data);
                 temp += serial + "." + get_timestamped_file_name() + ".bin";
 
                 {

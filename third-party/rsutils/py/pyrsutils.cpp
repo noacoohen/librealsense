@@ -8,7 +8,7 @@
 #include <rsutils/version.h>
 #include <rsutils/number/running-average.h>
 #include <rsutils/number/stabilized-value.h>
-
+#include <rsutils/os/os.h>
 
 #define NAME pyrsutils
 #define SNAME "pyrsutils"
@@ -29,6 +29,18 @@ PYBIND11_MODULE(NAME, m) {
            py::arg( "logger" ) = LIBREALSENSE_ELPP_ID );
 
     m.def( "split", &rsutils::string::split );
+
+    py::enum_<rsutils::os::special_folder>(m, "special_folder")
+        .value("user_desktop", rsutils::os::special_folder::user_desktop)
+        .value("user_documents", rsutils::os::special_folder::user_documents)
+        .value("user_pictures", rsutils::os::special_folder::user_pictures)
+        .value("user_videos", rsutils::os::special_folder::user_videos)
+        .value("temp_folder", rsutils::os::special_folder::temp_folder)
+        .value("app_data", rsutils::os::special_folder::app_data);
+     
+    m.def("get_os_name", &rsutils::os::get_os_name);
+    m.def("get_platform_name", &rsutils::os::get_platform_name);
+    m.def("get_folder_path", &rsutils::os::get_folder_path,"special_folder"_a);
 
     using rsutils::version;
     py::class_< version >( m, "version" )
