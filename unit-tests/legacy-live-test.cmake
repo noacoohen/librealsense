@@ -14,4 +14,4 @@ endif()
 
 set(PP_Rosbag_Recordings_File D435i_Depth_and_IMU.bag)
 set(PP_Rosbag_Recordings_URL https://librealsense.intel.com/rs-tests/Rosbag_unit_test_records)
-dl_file( ${PP_Rosbag_Recordings_URL} ${} ${PP_Rosbag_Recordings_File} OFF )
+dl_file( ${PP_Rosbag_Recordings_URL} ${Deployment_Location} ${PP_Rosbag_Recordings_File} OFF )
