@@ -59,6 +59,7 @@ endfunction()
 
 if(BUILD_UNIT_TESTS)
     include(./unit-tests.cmake)
+	include(./legacy-live-test.cmake)
 endif()
 
 
