@@ -2,7 +2,6 @@
 // Copyright(c) 2023 Intel Corporation. All Rights Reserved.
 
 #include "rsutils/os/os.h"
-#include <third-party/glfw/include/GLFW/glfw3.h>
 
 #ifdef _WIN32
 #include <windows.h>
