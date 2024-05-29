@@ -24,8 +24,12 @@ with test.closure("frame index - mipi IMU "):
     seconds_to_count_frames = 10
     dev = test.find_first_device_or_exit()
     sensor = dev.first_motion_sensor()
-    sensor.open( sensor.get_stream_profiles()[0] )
+    motion_profile_accel = next(p for p in sensor.profiles if p.stream_type() == rs.stream.accel and p.fps() == 100)
+    motion_profile_gyro = next(p for p in sensor.profiles if p.stream_type() == rs.stream.gyro and p.fps()==100)
+    sensor.open( [motion_profile_accel, motion_profile_gyro] )
     sensor.start( frame_callback )
     time.sleep(seconds_to_count_frames) # Time to count frames
     sensor.stop()
     sensor.close()
+
+test.print_results_and_exit()
