@@ -148,6 +148,7 @@ namespace librealsense
 
             void set_frequency(uint32_t frequency);
             void set_sensitivity( float sensitivity );
+            float get_sensitivity();
             void set_power(bool on);
 
             void signal_stop();
@@ -216,6 +217,8 @@ namespace librealsense
             static void foreach_hid_device(std::function<void(const hid_device_info&)> action);
 
             void set_gyro_scale_factor( double scale_factor ) override{};
+
+            float get_gyro_sensitivity() override{};
 
         private:
             static bool get_hid_device_info(const char* dev_path, hid_device_info& device_info);

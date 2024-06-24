@@ -57,17 +57,23 @@ namespace librealsense
         class wmf_hid_device : public hid_device
         {
         public:
-            static void foreach_hid_device(std::function<void(hid_device_info, CComPtr<ISensor>)> action);
-            wmf_hid_device(const hid_device_info& info, std::shared_ptr<const wmf_backend> backend);
+            static void foreach_hid_device( std::function< void( hid_device_info, CComPtr< ISensor > ) > action );
+            wmf_hid_device( const hid_device_info & info, std::shared_ptr< const wmf_backend > backend );
 
-            void register_profiles(const std::vector<hid_profile>& hid_profiles) override { _hid_profiles = hid_profiles;}
-            void open(const std::vector<hid_profile>&iio_profiles) override;
+            void register_profiles( const std::vector< hid_profile > & hid_profiles ) override
+            {
+                _hid_profiles = hid_profiles;
+            }
+            void open( const std::vector< hid_profile > & iio_profiles ) override;
             void close() override;
             void stop_capture() override;
-            void start_capture(hid_callback callback) override;
-            std::vector<hid_sensor> get_sensors() override; // Get opened sensors
-            std::vector<uint8_t> get_custom_report_data(const std::string& custom_sensor_name, const std::string& report_name, custom_sensor_report_field report_field) override;
+            void start_capture( hid_callback callback ) override;
+            std::vector< hid_sensor > get_sensors() override;  // Get opened sensors
+            std::vector< uint8_t > get_custom_report_data( const std::string & custom_sensor_name,
+                                                           const std::string & report_name,
+                                                           custom_sensor_report_field report_field ) override;
             void set_gyro_scale_factor( double scale_factor ) override;
+            float get_gyro_sensitivity() override { return -1; };
 
         private:
             // Don't move the position of wmf_backend member. This object must be destroyed only after COM objects.
@@ -81,6 +87,7 @@ namespace librealsense
             std::vector<hid_profile> _hid_profiles;
             //10.0 was used for D400 before FW support to gyro sensitivity control
             double _gyro_scale_factor = 10.0;
+            double _gyro_default_value = 0;
         };
     }
 }

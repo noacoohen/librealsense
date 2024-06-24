@@ -358,6 +358,11 @@ void hid_sensor::set_gyro_scale_factor(double scale_factor)
     _hid_device->set_gyro_scale_factor( scale_factor );
 }
 
+double hid_sensor::get_gyro_sensitivity()
+{
+    return _hid_device->get_gyro_sensitivity();
+}
+
 /*For gyro sensitivity - FW expects 0/0.1/0.2/0.3/0.4 we convert the values from the enum 0/1/2/3/4
 the user chooses to the values FW expects using gyro_sensitivity_convert*/
 double hid_sensor::get_imu_sensitivity_values( rs2_stream stream )

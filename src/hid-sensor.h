@@ -54,6 +54,7 @@ public:
     void set_imu_sensitivity( rs2_stream stream, float value );
     double get_imu_sensitivity_values( rs2_stream stream );
     void set_gyro_scale_factor(double scale_factor);
+    double get_gyro_sensitivity();
     std::vector< uint8_t > get_custom_report_data( const std::string & custom_sensor_name,
                                                    const std::string & report_name,
                                                    platform::custom_sensor_report_field report_field ) const;

@@ -721,7 +721,24 @@ namespace librealsense
                                                                        << ". device path: " << sensitivity_path );
             }
             iio_device_file << sensitivity;
+            iio_device_file.close(); 
+        }
+
+        float iio_hid_sensor::get_sensitivity()
+        {
+            float sensitivity;
+            auto sensitivity_path = _iio_device_path + "/" + _sensitivity_name;
+            std::ofstream iio_device_file( sensitivity_path );
+
+            if( ! iio_device_file.is_open() )
+            {
+                throw linux_backend_exception( rsutils::string::from() << "Failed to get sensitivity " << sensitivity
+                                                                       << ". device path: " << sensitivity_path );
+            }
+            iio_device_file >> sensitivity;
             iio_device_file.close();
+
+            return sensitivity;
         }
 
         // Asynchronous power management

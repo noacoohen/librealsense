@@ -313,33 +313,97 @@ namespace librealsense
                                 PropVariantInit( &pv );
                                 // COM type for double
                                 pv.vt = VT_R8;  
-                                pv.dblVal = (double)profile_to_open.sensitivity;
-                                pInSensitivityValues->SetValue(
-                                    SENSOR_DATA_TYPE_ANGULAR_VELOCITY_X_DEGREES_PER_SECOND,
-                                    &pv );
-                                pInSensitivityValues->SetValue(
-                                    SENSOR_DATA_TYPE_ANGULAR_VELOCITY_Y_DEGREES_PER_SECOND,
-                                    &pv );
-                                pInSensitivityValues->SetValue(
-                                    SENSOR_DATA_TYPE_ANGULAR_VELOCITY_Z_DEGREES_PER_SECOND,
-                                    &pv );
-                                // creating IPortableDeviceValues container holding <SENSOR_PROPERTY_CHANGE_SENSITIVITY,pInSensitivityValues> tuple
-                                IPortableDeviceValues * pInValues = NULL; //Input
-                                CHECK_HR(CoCreateInstance( CLSID_PortableDeviceValues,
-                                                            NULL,
-                                                            CLSCTX_INPROC_SERVER,
-                                                            IID_PPV_ARGS( &pInValues ) ));
+                                if( true)
+                                {
+                                    HRESULT hr = S_OK;
+                                    CComPtr< IPortableDeviceValues > pReportValues;
+                                    PROPVARIANT pvX, pvY, pvZ;
+                                    PropVariantInit( &pvX );
+                                    PropVariantInit( &pvY );
+                                    PropVariantInit( &pvZ );
 
-                                pInValues->SetIPortableDeviceValuesValue( SENSOR_PROPERTY_CHANGE_SENSITIVITY,
-                                                                            pInSensitivityValues );
+                                    // Get the report values from the sensor
+                                    hr = connected_sensor->get_sensor()->GetProperties( nullptr, &pReportValues );
+                                    if( FAILED( hr ) )
+                                    {
+                                        goto cleanup;
+                                    }
+
+                                    // Retrieve the sensitivity values from the report
+                                    hr = pReportValues->GetValue(
+                                        SENSOR_DATA_TYPE_ANGULAR_VELOCITY_X_DEGREES_PER_SECOND,
+                                        &pvX );
+                                    //if( FAILED( hr ) )
+                                    //{
+                                    //    goto cleanup;
+                                    //}
+                                    hr = pReportValues->GetValue(
+                                        SENSOR_DATA_TYPE_ANGULAR_VELOCITY_Y_DEGREES_PER_SECOND,
+                                        &pvY );
+                                    //if( FAILED( hr ) )
+                                   // {
+                                     //   goto cleanup;
+                                    //}
+                                    hr = pReportValues->GetValue(
+                                        SENSOR_DATA_TYPE_ANGULAR_VELOCITY_Z_DEGREES_PER_SECOND,
+                                        &pvZ );
+                                    if( FAILED( hr ) )
+                                    {
+                                        goto cleanup;
+                                    }
+
+                                    // Display the retrieved values (example usage, you can process them as needed)
+                                    if( pvX.vt == VT_R8 )
+                                    {
+                                        wprintf( L"Angular Velocity X: %f degrees per second\n", pvX.dblVal );
+                                    }
+                                    if( pvY.vt == VT_R8 )
+                                    {
+                                        wprintf( L"Angular Velocity Y: %f degrees per second\n", pvY.dblVal );
+                                    }
+                                    if( pvZ.vt == VT_R8 )
+                                    {
+                                        wprintf( L"Angular Velocity Z: %f degrees per second\n", pvZ.dblVal );
+                                    }
+
+                                cleanup:
+                                    PropVariantClear( &pvX );
+                                    PropVariantClear( &pvY );
+                                    PropVariantClear( &pvZ );
+
+                                }
+                                else 
+                                {
+                                    pv.dblVal = (double)profile_to_open.sensitivity;
+                                    pInSensitivityValues->SetValue(
+                                        SENSOR_DATA_TYPE_ANGULAR_VELOCITY_X_DEGREES_PER_SECOND,
+                                        &pv );
+                                    pInSensitivityValues->SetValue(
+                                        SENSOR_DATA_TYPE_ANGULAR_VELOCITY_Y_DEGREES_PER_SECOND,
+                                        &pv );
+                                    pInSensitivityValues->SetValue(
+                                        SENSOR_DATA_TYPE_ANGULAR_VELOCITY_Z_DEGREES_PER_SECOND,
+                                        &pv );
+                                    // creating IPortableDeviceValues container holding
+                                    // <SENSOR_PROPERTY_CHANGE_SENSITIVITY,pInSensitivityValues> tuple
+                                    IPortableDeviceValues * pInValues = NULL;  // Input
+                                    CHECK_HR( CoCreateInstance( CLSID_PortableDeviceValues,
+                                                                NULL,
+                                                                CLSCTX_INPROC_SERVER,
+                                                                IID_PPV_ARGS( &pInValues ) ) );
+
+                                    pInValues->SetIPortableDeviceValuesValue( SENSOR_PROPERTY_CHANGE_SENSITIVITY,
+                                                                              pInSensitivityValues );
+
+                                    IPortableDeviceValues * pOutValues = NULL;  // Output
+                                    // set sensitivity
+                                    hr = connected_sensor->get_sensor()->SetProperties( pInValues, &pOutValues );
+                                    if( SUCCEEDED( hr ) )
+                                        PropVariantClear( &pv );
+
+                                    pInValues->Release();
+                                }
                                 
-                                IPortableDeviceValues * pOutValues = NULL; //Output
-                                // set sensitivity
-                                hr = connected_sensor->get_sensor()->SetProperties( pInValues, &pOutValues );
-                                if( SUCCEEDED( hr ) )
-                                    PropVariantClear( &pv );
-
-                                pInValues->Release();
 
                             }
                             
@@ -409,6 +473,8 @@ namespace librealsense
         {
             _gyro_scale_factor = scale_factor;
         }
+
+       
 
         void wmf_hid_device::foreach_hid_device(std::function<void(hid_device_info, CComPtr<ISensor>)> action)
         {
