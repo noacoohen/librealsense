@@ -1,5 +1,5 @@
 /* License: Apache 2.0. See LICENSE file in root directory. */
-/* Copyright(c) 2019 Intel Corporation. All Rights Reserved. */
+/* Copyright(c) 2024 Intel Corporation. All Rights Reserved. */
 #pragma once
 
 #include "../types.h"
@@ -7,7 +7,8 @@
 #include "../usb/usb-device.h"
 #include "libusb.h"
 #include "context-libusb.h"
-
+#include "../platform/device-watcher.h" 
+#include "../polling-device-watcher.h"
 #include <memory>
 
 namespace librealsense
@@ -20,6 +21,7 @@ namespace librealsense
             device_watcher_libusb(const platform::backend* backend_ref);
             virtual void start(device_changed_callback callback) override;
             virtual void stop() override;
+            virtual bool is_stopped() const override;
 
         private:
             const platform::backend* _backend;

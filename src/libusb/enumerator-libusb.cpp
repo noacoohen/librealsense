@@ -5,7 +5,7 @@
 #include "libusb/device-libusb.h"
 #include "context-libusb.h"
 #include "types.h"
-
+#include <rsutils/string/string-utilities.h>
 #include "libusb.h"
 
 namespace librealsense
@@ -93,7 +93,7 @@ namespace librealsense
                 auto ret = libusb_get_device_descriptor(device, &desc);
                 if (LIBUSB_SUCCESS == ret)
                 {
-                    LOG_DEBUG("Found device " << hexify(desc.idVendor) << " " << hexify(desc.idProduct));
+                    LOG_DEBUG( "Found device " << rsutils::string::hexify( desc.idVendor ) << " "<< rsutils::string::hexify( desc.idProduct ) );
                     auto sd = get_subdevices(device, desc);
                     rv.insert(rv.end(), sd.begin(), sd.end());
                 }

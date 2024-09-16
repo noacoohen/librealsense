@@ -1,9 +1,10 @@
 // License: Apache 2.0. See LICENSE file in root directory.
-// Copyright(c) 2019 Intel Corporation. All Rights Reserved.
+// Copyright(c) 2024 Intel Corporation. All Rights Reserved.
 #include "device-watcher-libusb.h"
 
 #include "libusb.h"
 #include "context-libusb.h"
+#include <rsutils/string/string-utilities.h>
 
 using namespace librealsense;
 using namespace librealsense::platform;
@@ -15,6 +16,7 @@ device_watcher_libusb::device_watcher_libusb(const platform::backend* backend_re
     _prev_group = {_backend->query_uvc_devices(),
                    _backend->query_usb_devices(),
                    _backend->query_hid_devices() };
+    _watch_thread_stop = true;
 }
 
 void device_watcher_libusb::update_devices()
@@ -68,7 +70,7 @@ void device_watcher_libusb::start(librealsense::platform::device_changed_callbac
                                             if(rc)
                                                 LOG_ERROR("Error getting device descriptor " << libusb_error_name(rc));
                                             else
-                                                LOG_INFO(event_str << " address: " << addr << " VID: " << hexify(desc.idVendor) << " PID: " << hexify(desc.idProduct));
+                                                LOG_INFO( event_str << " address: " << addr << " VID: "<< rsutils::string::hexify( desc.idVendor ) << " PID: " << rsutils::string::hexify( desc.idProduct ) );
 
                                             // No querying or talking to devices in hotplug callback https://github.com/libusb/libusb/issues/408
                                             ((device_watcher_libusb *)user_data)->update_next = true;
@@ -109,4 +111,9 @@ void device_watcher_libusb::stop()
         _watch_thread.join();
     }
     _callback = nullptr;
+}
+
+bool device_watcher_libusb::is_stopped() const
+{
+    return _watch_thread_stop;
 }
