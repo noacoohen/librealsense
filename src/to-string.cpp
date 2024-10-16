@@ -313,6 +313,7 @@ const char * get_string( rs2_extension value )
     CASE( MAX_USABLE_RANGE_SENSOR )
     CASE( DEBUG_STREAM_SENSOR )
     CASE( CALIBRATION_CHANGE_DEVICE )
+    CASE( ROTATION_FILTER )
     default:
         assert( ! is_valid( value ) );
         return UNKNOWN_VALUE;
@@ -805,3 +806,4 @@ const char * rs2_host_perf_mode_to_string( rs2_host_perf_mode mode ) { return li
 const char * rs2_emitter_frequency_mode_to_string( rs2_emitter_frequency_mode mode ) { return librealsense::get_string( mode ); }
 const char * rs2_depth_auto_exposure_mode_to_string( rs2_depth_auto_exposure_mode mode ) { return librealsense::get_string( mode ); }
 const char * rs2_gyro_sensitivity_to_string( rs2_gyro_sensitivity mode ){return librealsense::get_string( mode );}
+//const char * rs2_rotation_to_string( rs2_rotation mode ){ return librealsense::get_string( mode );}

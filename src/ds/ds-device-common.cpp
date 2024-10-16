@@ -17,6 +17,7 @@
 #include "proc/spatial-filter.h"
 #include "proc/colorizer.h"
 #include "proc/temporal-filter.h"
+#include "proc/rotation-filter.h"
 
 #include <src/backend.h>
 #include <librealsense2/h/rs_internal.h>

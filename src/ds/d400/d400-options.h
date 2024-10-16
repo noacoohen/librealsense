@@ -189,4 +189,34 @@ namespace librealsense
         std::function< void( const option & ) > _record_action = []( const option & ) {};
 
     };
-}
+
+  /*  class sensor_base;
+    class rotation_option : public option_base
+    {
+    public:
+        rotation_option( const std::weak_ptr< sensor_base > & sensor, const option_range & opt_range )
+            : option_base( opt_range )
+            , _value( opt_range.def )
+            , _sensor( sensor )
+        {
+            set( _value );
+        }
+        virtual ~rotation_option() = default;
+        virtual void set( float value ) override;
+        virtual float query() const override;
+        virtual bool is_enabled() const override { return true; }
+        virtual const char * get_description() const override;
+        const char * get_value_description( float value ) const override;
+        virtual void enable_recording( std::function< void( const option & ) > record_action ) override
+        {
+            _record_action = record_action;
+        }
+        virtual bool is_read_only() const override;
+
+    private:
+        float _value;
+        std::weak_ptr< sensor_base > _sensor;
+        std::function< void( const option & ) > _record_action = []( const option & ) {
+        };
+    };*/
+    }

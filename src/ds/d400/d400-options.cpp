@@ -480,5 +480,61 @@ namespace librealsense
     }
 
 
+
+    
+ //   void librealsense::rotation_option::set( float value )
+ //   {
+ //       auto strong = _sensor.lock();
+ //       if( ! strong )
+ //           throw invalid_value_exception( "Sensor is not alive for setting" );
+
+ //       //if( strong->is_streaming() )
+ //         //  throw invalid_value_exception( "setting this option during streaming is not allowed!" );
+
+ //       if( ! is_valid( value ) )
+ //           throw invalid_value_exception( "set(rotation) failed! Invalid rotation request "
+ //                                          + std::to_string( value ) );
+
+ //       _value = value;
+ //   }
+
+ //   float librealsense::rotation_option::query() const
+ //   {
+ //       return _value;
+ //   }
+
+
+ //   const char * librealsense::rotation_option::get_value_description( float val ) const
+ //   {
+ //       switch( static_cast< int >( val ) )
+ //       {
+ //       case RS2_ROTATION_90_DEG_LEFT: {
+ //           return "-90 Deg";
+ //       }
+ //       case RS2_ROTATION_0_DEG: {
+ //           return "0 Deg";
+ //       }
+ //       case RS2_ROTATION_90_DEG_RIGHT: {
+ //           return "90 Deg";
+ //       }
+ //       case RS2_ROTATION_180_DEG: {
+ //           return "180 Deg";
+ //       }
+ //       default:
+ //           throw invalid_value_exception( "value not found" );
+ //       }
+ //   }
+
+ //   const char * librealsense::rotation_option::get_description() const
+ //   {
+ //       return "rotate frames";
+ //   }
+
+ //   bool librealsense::rotation_option::is_read_only() const
+ //   {
+ //       if( auto strong = _sensor.lock() )
+ //           return strong->is_opened();
+ //       return false;
+ //   }
  }
  

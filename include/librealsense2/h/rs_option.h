@@ -125,6 +125,7 @@ extern "C" {
         RS2_OPTION_SOC_PVT_TEMPERATURE, /**< Temperature of PVT SOC */
         RS2_OPTION_GYRO_SENSITIVITY,/**< Control of the gyro sensitivity level, see rs2_gyro_sensitivity for values */
         RS2_OPTION_REGION_OF_INTEREST,/**< The rectangular area used from the streaming profile */
+        RS2_OPTION_ROTATION,
         RS2_OPTION_COUNT /**< Number of enumeration values. Not a valid input: intended to be used in for-loops. */
     } rs2_option;
 
@@ -302,6 +303,17 @@ extern "C" {
         RS2_GYRO_SENSITIVITY_COUNT
     } rs2_gyro_sensitivity;
     const char * rs2_gyro_sensitivity_to_string( rs2_gyro_sensitivity mode );
+
+     /** \brief values for RS2_OPTION_ROTATION option. */
+    //typedef enum rs2_rotation
+    //{
+    //    RS2_ROTATION_90_DEG_LEFT = 0,
+    //    RS2_ROTATION_0_DEG = 1,
+    //    RS2_ROTATION_90_DEG_RIGHT = 2,
+    //    RS2_ROTATION_180_DEG = 3,
+    //    RS2_ROTATION_COUNT
+    //} rs2_rotation;
+    //const char * rs2_rotation_to_string( rs2_rotation mode );
 
     /**
     * check if an option is read-only
