@@ -68,11 +68,13 @@ namespace librealsense {
 
     rs2::frame rotation_filter::process_frame(const rs2::frame_source& source, const rs2::frame& f)
     {
-        update_output_profile(f);
 
         auto src = f.as<rs2::video_frame>();
         rs2::stream_profile profile = f.get_profile();
+        _target_stream_profile = profile;
         rs2_format format = profile.format();
+        _padded_width = src.get_height();
+        _padded_height = src.get_width();
         rs2_stream type = profile.stream_type();
         auto bpp = src.get_bytes_per_pixel();
 
@@ -205,9 +207,9 @@ namespace librealsense {
         auto vf = f.as<rs2::video_frame>();
         auto ret = source.allocate_video_frame(_target_stream_profile, f,
             vf.get_bytes_per_pixel(),
-            _padded_width,
             _padded_height,
-            _padded_width*vf.get_bytes_per_pixel(),
+            _padded_width,
+            _padded_height * vf.get_bytes_per_pixel(),
             tgt_type);
 
         return ret;
