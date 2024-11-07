@@ -19,31 +19,23 @@ namespace librealsense
         rs2::frame prepare_target_frame(const rs2::frame& f, const rs2::frame_source& source, rs2_extension tgt_type);
 
         template< size_t SIZE >
-        void
-        rotate_depth( const uint8_t * frame_data_in, uint8_t * const frame_data_out,
-            size_t width_in, size_t height_in);
+        void rotate_depth( uint8_t * const out, const uint8_t * source, int width, int height );
 
-        void rotate_others(rs2_format format, const void * frame_data_in, void * frame_data_out,
-            size_t width_in, size_t height_in, size_t scale);
         rs2::frame process_frame(const rs2::frame_source& source, const rs2::frame& f) override;
 
     private:
         void    update_output_profile(const rs2::frame& f);
 
         
-        int                 _decimation_factor;
         int                _control_val;
-        int _patch_size;
-        int _kernel_size;
+        int                _patch_size;
         rs2::stream_profile     _source_stream_profile;
         rs2::stream_profile     _target_stream_profile;
-        std::map<std::tuple<const rs2_stream_profile*, uint8_t>, rs2::stream_profile> _registered_profiles;
-        uint16_t                _real_width;        // Number of rows/columns with real datain the decimated image
-        uint16_t                _real_height;       // Correspond to w,h in the reference code
-        uint16_t                _padded_width;      // Corresponds to w4/h4 in the reference code
-        uint16_t                _padded_height;
-        bool                    _recalc_profile;
-        bool                    _options_changed;   // Tracking changes imposed by user
+        uint16_t                _real_width;        
+        uint16_t                _real_height;       
+        uint16_t                _rotated_width;     
+        uint16_t                _rotated_height;
+
         int _value;
     };
     MAP_EXTENSION( RS2_EXTENSION_ROTATION_FILTER, librealsense::rotation_filter );
