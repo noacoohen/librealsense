@@ -54,6 +54,10 @@ namespace librealsense
         void register_extrinsics(const stream_interface& from, const stream_interface& to, rs2_extrinsics extr);
         void override_extrinsics(const stream_interface& from, const stream_interface& to, rs2_extrinsics const & extr);
         bool try_fetch_extrinsics(const stream_interface& from, const stream_interface& to, rs2_extrinsics* extr);
+        void replace_profile( const stream_interface & orig_profile,
+                              const stream_interface & new_profile,
+                              rs2_extrinsics new_extr );
+        void delete_profile( const stream_interface & prev_profile );
 
         struct extrinsics_lock
         {
@@ -93,6 +97,7 @@ namespace librealsense
         bool try_fetch_extrinsics(int from, int to, std::set<int>& visited, rs2_extrinsics* extr);
         void cleanup_extrinsics();
         int find_stream_profile(const stream_interface& p, bool add_if_not_there = true);
+        /*rs2_extrinsics compose_extrinsics( const rs2_extrinsics & new_extr, const rs2_extrinsics & old_extr );*/
 
         std::atomic<int> _locks_count;
 

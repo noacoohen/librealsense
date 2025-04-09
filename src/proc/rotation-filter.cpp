@@ -2,11 +2,15 @@
 // Copyright(c) 2024 Intel Corporation. All Rights Reserved.
 
 #include <librealsense2/hpp/rs_sensor.hpp>
+#include <src/core/sensor-interface.h>
+#include <src/core/frame-interface.h>
 #include "option.h"
 #include "stream.h"
 #include "core/video.h"
 #include "proc/rotation-filter.h"
 #include <rsutils/easylogging/easyloggingpp.h>
+#include <corecrt_math_defines.h>
+#include <librealsense2/rs.hpp>
 
 namespace librealsense {
 
@@ -50,7 +54,10 @@ namespace librealsense {
                     throw invalid_value_exception( rsutils::string::from()
                                                    << "Unsupported rotation scale " << val << " is out of range." );
 
-                _value = val;
+                 if( _value != val )
+                {
+                    _value = val;
+                }
             } );
 
         register_option( RS2_OPTION_ROTATION, rotation_control );
@@ -58,7 +65,7 @@ namespace librealsense {
 
     rs2::frame rotation_filter::process_frame(const rs2::frame_source& source, const rs2::frame& f)
     {
-        if( _value == rotation_default_val || _streams_to_rotate.empty() )
+        if(  _streams_to_rotate.empty() )
             return f;
 
         // Copying to a local variable to avoid locking.
@@ -66,19 +73,18 @@ namespace librealsense {
 
         auto src = f.as< rs2::video_frame >();
         rs2::stream_profile profile = f.get_profile();
-        auto format = profile.format();
-        _target_stream_profile = profile;
+        //_target_stream_profile = profile;
 
-        if( local_value == 90 || local_value == -90 )
+        /*if( local_value == 90 || local_value == -90 )
         {
             _rotated_width = src.get_height();
             _rotated_height = src.get_width();
         }
-        else if( local_value == 180 )
+        else if( local_value == 180 || local_value == 0 )
         {
             _rotated_width = src.get_width();
             _rotated_height = src.get_height();
-        }
+        }*/
         auto bpp = src.get_bytes_per_pixel();
         update_output_profile( f, local_value );
         rs2_stream type = profile.stream_type();
@@ -88,8 +94,12 @@ namespace librealsense {
         else
             tgt_type = f.is< rs2::disparity_frame >() ? RS2_EXTENSION_DISPARITY_FRAME : RS2_EXTENSION_DEPTH_FRAME;
 
+        if( local_value == 0 )
+            return f;
+
         if (auto tgt = prepare_target_frame(f, source, tgt_type))
         {
+            auto format = profile.format();
             if( format == RS2_FORMAT_YUYV && ( local_value == 90 || local_value == -90 ) )
             {
                 LOG_ERROR( "Rotating YUYV format is disabled for 90 or -90 degrees" );
@@ -117,15 +127,180 @@ namespace librealsense {
         return f;
     }
 
-    void  rotation_filter::update_output_profile(const rs2::frame& f, float & value)
+    
+    //void rotation_filter::update_output_profile( const rs2::frame & f, float & value )
+    //{
+    //    if( value == _last_rotation_value )
+    //        return;
+    //    //delete previous profile (_target)
+    //    //remove _source 
+
+    //    //delete old profile
+    //    //insert new profile
+
+    //    if( _target_stream_profile )
+    //    {
+    //        environment::get_instance().get_extrinsics_graph().delete_profile( *_target_stream_profile.get()->profile );
+    //    }
+
+    //    _source_stream_profile = f.get_profile();
+
+    //    _target_stream_profile = _source_stream_profile.clone( _source_stream_profile.stream_type(),
+    //                                                           _source_stream_profile.stream_index(),
+    //                                                           _source_stream_profile.format() );
+
+    //    auto src_vspi = dynamic_cast< video_stream_profile_interface * >( _source_stream_profile.get()->profile );
+    //    if( ! src_vspi )
+    //        throw std::runtime_error( "Stream profile interface is not video stream profile interface" );
+
+    //    auto tgt_vspi = dynamic_cast< video_stream_profile_interface * >( _target_stream_profile.get()->profile );
+    //    if( ! tgt_vspi )
+    //        throw std::runtime_error( "Profile is not video stream profile" );
+
+    //    rs2_intrinsics src_intrin = src_vspi->get_intrinsics();
+    //    rs2_intrinsics tgt_intrin = tgt_vspi->get_intrinsics();
+
+
+    //    if( value == 90 )  // Clockwise rotation
+    //    {
+    //        _rotated_width = src_intrin.height;
+    //        _rotated_height = src_intrin.width;
+
+
+    //        tgt_intrin.fx = src_intrin.fy;
+    //        tgt_intrin.fy = src_intrin.fx;
+    //        tgt_intrin.ppx = src_intrin.ppy;
+    //        tgt_intrin.ppy = src_intrin.ppx;
+    //    }
+    //    else if( value == -90 )  // Counterclockwise rotation
+    //    {
+    //        _rotated_width = src_intrin.height;
+    //        _rotated_height = src_intrin.width;
+
+    //        tgt_intrin.fx = src_intrin.fy;
+    //        tgt_intrin.fy = src_intrin.fx;
+    //        tgt_intrin.ppx = src_intrin.height - src_intrin.ppy;
+    //        tgt_intrin.ppy = src_intrin.ppx;
+    //    }
+
+    //    else if( value == 180 )  // 180 degrees rotation
+    //    {
+    //        _rotated_width = src_intrin.width;
+    //        _rotated_height = src_intrin.height;
+
+    //        // For 180 rotation, width and height stay the same but principal point changes
+    //        tgt_intrin.ppx = src_intrin.width - src_intrin.ppx;
+    //        tgt_intrin.ppy = src_intrin.height - src_intrin.ppy;
+    //    }
+    //    else if( value == 0 )
+    //    {
+    //        _rotated_width = src_intrin.width;
+    //        _rotated_height = src_intrin.height;
+
+    //        tgt_intrin.ppx = src_intrin.ppx;
+    //        tgt_intrin.ppy = src_intrin.ppy;
+    //        tgt_intrin.fx = src_intrin.fx;
+    //        tgt_intrin.fy = src_intrin.fy;
+    //    }
+    //    else
+    //    {
+    //        throw std::invalid_argument( "Unsupported rotation angle" );
+    //    }
+
+    //    tgt_intrin.width = _rotated_width;
+    //    tgt_intrin.height = _rotated_height;
+
+    //    tgt_vspi->set_intrinsics( [tgt_intrin]() { return tgt_intrin; } );
+
+    //    tgt_vspi->set_dims( _rotated_width, _rotated_height );
+
+    //    rs2_extrinsics extr{};
+    //    if( value == 90 )
+    //    {
+    //        // 90 deg clockwise
+    //        extr.rotation[0] = 0;
+    //        extr.rotation[1] = 1;
+    //        extr.rotation[2] = 0;
+    //        extr.rotation[3] = -1;
+    //        extr.rotation[4] = 0;
+    //        extr.rotation[5] = 0;
+    //        extr.rotation[6] = 0;
+    //        extr.rotation[7] = 0;
+    //        extr.rotation[8] = 1;
+    //    }
+    //    else if( value == -90 )
+    //    {
+    //        // 90 deg counter-clockwise
+    //        extr.rotation[0] = 0;
+    //        extr.rotation[1] = -1;
+    //        extr.rotation[2] = 0;
+    //        extr.rotation[3] = 1;
+    //        extr.rotation[4] = 0;
+    //        extr.rotation[5] = 0;
+    //        extr.rotation[6] = 0;
+    //        extr.rotation[7] = 0;
+    //        extr.rotation[8] = 1;
+    //    }
+    //    else if( value == 180 )
+    //    {
+    //        extr.rotation[0] = -1;
+    //        extr.rotation[1] = 0;
+    //        extr.rotation[2] = 0;
+    //        extr.rotation[3] = 0;
+    //        extr.rotation[4] = -1;
+    //        extr.rotation[5] = 0;
+    //        extr.rotation[6] = 0;
+    //        extr.rotation[7] = 0;
+    //        extr.rotation[8] = 1;
+    //    }
+    //    else if( value == 0 )
+    //    {
+    //        extr.rotation[0] = 1;
+    //        extr.rotation[1] = 0;
+    //        extr.rotation[2] = 0;
+    //        extr.rotation[3] = 0;
+    //        extr.rotation[4] = 1;
+    //        extr.rotation[5] = 0;
+    //        extr.rotation[6] = 0;
+    //        extr.rotation[7] = 0;
+    //        extr.rotation[8] = 1;
+    //    }
+
+    //    //// No translation is applied
+    //    extr.translation[0] = 0;
+    //    extr.translation[1] = 0;
+    //    extr.translation[2] = 0;
+
+    //    _last_rotation_value = value;
+
+    //    environment::get_instance().get_extrinsics_graph().replace_profile( *src_vspi, *tgt_vspi, extr );
+
+    //}
+
+
+     void rotation_filter::update_output_profile( const rs2::frame & f, float & value )
     {
-        _source_stream_profile = f.get_profile();
+        if( value == _last_rotation_value )
+            return;
+ 
+        bool has_prev = _target_stream_profile;
         
+        _source_stream_profile = f.get_profile();
+
+        auto prev_vspi = dynamic_cast< video_stream_profile_interface * >( _source_stream_profile.get()->profile );
+        if( ! prev_vspi )
+            throw std::runtime_error( "Stream profile interface is not video stream profile interface" );
+
+        if( _target_stream_profile )
+        {
+            prev_vspi = dynamic_cast< video_stream_profile_interface * >( _target_stream_profile.get()->profile );
+            if( ! prev_vspi )
+                throw std::runtime_error( "Stream profile interface is not video stream profile interface" );
+        }
         _target_stream_profile = _source_stream_profile.clone( _source_stream_profile.stream_type(),
-                                                            _source_stream_profile.stream_index(),
-                                                            _source_stream_profile.format() );
-
-
+                                                               _source_stream_profile.stream_index(),
+                                                               _source_stream_profile.format() );
+        
         auto src_vspi = dynamic_cast< video_stream_profile_interface * >( _source_stream_profile.get()->profile );
         if( ! src_vspi )
             throw std::runtime_error( "Stream profile interface is not video stream profile interface" );
@@ -137,11 +312,23 @@ namespace librealsense {
         rs2_intrinsics src_intrin = src_vspi->get_intrinsics();
         rs2_intrinsics tgt_intrin = tgt_vspi->get_intrinsics();
 
-        // Adjust width and height based on the rotation angle 
-        if( value == 90 || value == -90 )  // 90 or -90 degrees rotation
+
+        if( value == 90 )  // Clockwise rotation
         {
             _rotated_width = src_intrin.height;
             _rotated_height = src_intrin.width;
+
+
+            tgt_intrin.fx = src_intrin.fy;
+            tgt_intrin.fy = src_intrin.fx;
+            tgt_intrin.ppx = src_intrin.ppy;
+            tgt_intrin.ppy = src_intrin.ppx;
+        }
+        else if( value == -90 )  // Counterclockwise rotation
+        {
+            _rotated_width = src_intrin.height;
+            _rotated_height = src_intrin.width;
+
             tgt_intrin.fx = src_intrin.fy;
             tgt_intrin.fy = src_intrin.fx;
             tgt_intrin.ppx = src_intrin.ppy;
@@ -151,16 +338,98 @@ namespace librealsense {
         {
             _rotated_width = src_intrin.width;
             _rotated_height = src_intrin.height;
+
+            tgt_intrin.fx = src_intrin.fx;
+            tgt_intrin.fy = src_intrin.fy;
+            tgt_intrin.ppx = src_intrin.width - src_intrin.ppx;
+            tgt_intrin.ppy = src_intrin.height - src_intrin.ppy;
+
+        }
+        else if(value==0)
+        {
+            _rotated_width = src_intrin.width;
+            _rotated_height = src_intrin.height;
             tgt_intrin = src_intrin;
         }
-        else { throw std::invalid_argument( "Unsupported rotation angle" ); }
+        else
+        {
+            throw std::invalid_argument( "Unsupported rotation angle" );
+        }
 
         tgt_intrin.width = _rotated_width;
         tgt_intrin.height = _rotated_height;
 
         tgt_vspi->set_intrinsics( [tgt_intrin]() { return tgt_intrin; } );
+
         tgt_vspi->set_dims( _rotated_width, _rotated_height );
+
+        rs2_extrinsics extr{};
+        if( value == 90 )
+        {
+            // 90 deg clockwise
+            extr.rotation[0] = 0;
+            extr.rotation[1] = 1;
+            extr.rotation[2] = 0;
+            extr.rotation[3] = -1;
+            extr.rotation[4] = 0;
+            extr.rotation[5] = 0;
+            extr.rotation[6] = 0;
+            extr.rotation[7] = 0;
+            extr.rotation[8] = 1;
+        }
+        else if( value == -90 )
+        {
+            // 90 deg counter-clockwise
+            extr.rotation[0] = 0;
+            extr.rotation[1] = -1;
+            extr.rotation[2] = 0;
+            extr.rotation[3] = 1;
+            extr.rotation[4] = 0;
+            extr.rotation[5] = 0;
+            extr.rotation[6] = 0;
+            extr.rotation[7] = 0;
+            extr.rotation[8] = 1;
+        }
+        else if( value == 180 )
+        {
+            extr.rotation[0] = -1;
+            extr.rotation[1] = 0;
+            extr.rotation[2] = 0;
+            extr.rotation[3] = 0;
+            extr.rotation[4] = -1;
+            extr.rotation[5] = 0;
+            extr.rotation[6] = 0;
+            extr.rotation[7] = 0;
+            extr.rotation[8] = 1;
+        }
+        else if( value == 0 )
+        {
+            extr.rotation[0] = 1;
+            extr.rotation[1] = 0;
+            extr.rotation[2] = 0;
+            extr.rotation[3] = 0;
+            extr.rotation[4] = 1;
+            extr.rotation[5] = 0;
+            extr.rotation[6] = 0;
+            extr.rotation[7] = 0;
+            extr.rotation[8] = 1;
+        }
+
+        //// No translation is applied
+        extr.translation[0] = 0;
+        extr.translation[1] = 0;
+        extr.translation[2] = 0;
+
+        _last_rotation_value = value;
+        if( has_prev )
+        {
+            environment::get_instance().get_extrinsics_graph().delete_profile( *_source_stream_profile.get()->profile );
+        }
+        environment::get_instance().get_extrinsics_graph().replace_profile( *prev_vspi, *tgt_vspi, extr );
+        
     }
+
+
 
     rs2::frame rotation_filter::prepare_target_frame(const rs2::frame& f, const rs2::frame_source& source, rs2_extension tgt_type)
     {
@@ -177,6 +446,7 @@ namespace librealsense {
 
     void rotation_filter::rotate_frame( uint8_t * const out, const uint8_t * source, int width, int height, int bpp, float & value )
     {
+
         if( value != 90 && value != -90 && value != 180 )
         {
             throw std::invalid_argument( "Invalid rotation angle. Only 90, -90, and 180 degrees are supported." );

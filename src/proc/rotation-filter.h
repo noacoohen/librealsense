@@ -6,15 +6,22 @@
 #include <librealsense2/hpp/rs_frame.hpp>
 #include <librealsense2/hpp/rs_processing.hpp>
 #include "proc/synthetic-stream.h"
+#include <src/device-calibration.h>
+#include <set>
 
 namespace librealsense
 {
 
-    class rotation_filter : public stream_filter_processing_block
+    class rotation_filter : public stream_filter_processing_block, public calibration_change_device
     {
     public:
         rotation_filter();
         rotation_filter( std::vector< rs2_stream > streams_to_rotate );
+
+        void register_calibration_change_callback( rs2_calibration_change_callback_sptr callback ) override
+        {
+            _user_callbacks.insert( callback );
+        }
 
     protected:
         rs2::frame prepare_target_frame(const rs2::frame& f, const rs2::frame_source& source, rs2_extension tgt_type);
@@ -26,6 +33,8 @@ namespace librealsense
 
     private:
         void update_output_profile( const rs2::frame & f, float & value );
+        // Calibration change callbacks container
+        std::set< rs2_calibration_change_callback_sptr > _user_callbacks;
 
         std::vector< rs2_stream > _streams_to_rotate;
         int                       _control_val;
@@ -36,6 +45,7 @@ namespace librealsense
         uint16_t                  _rotated_width;     
         uint16_t                  _rotated_height;
         float _value;
+        float _last_rotation_value = 0;
     };
     MAP_EXTENSION( RS2_EXTENSION_ROTATION_FILTER, librealsense::rotation_filter );
     }

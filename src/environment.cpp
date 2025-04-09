@@ -5,7 +5,8 @@
 #include "pose.h"
 #include "core/stream-interface.h"
 #include <rsutils/easylogging/easyloggingpp.h>
-
+#include <rsutils/string/from.h>
+#include <src/core/video.h>
 
 namespace librealsense
 {
@@ -39,10 +40,12 @@ namespace librealsense
         
         // First, trim any dead stream, to make sure we are not keep gaining memory
         cleanup_extrinsics();
-
+        auto vs = dynamic_cast< const video_stream_profile_interface * >( &profile );
         // Second, register new extrinsics
         auto profile_idx = find_stream_profile(profile);
-
+        LOG_INFO( rsutils::string::from()
+                  << "registering profile at index" << profile_idx << " " << profile.get_stream_type() << "format"
+                  << vs->get_format() << " height " << vs->get_height() << " width " << vs->get_width() );
         if (_extrinsics.find(profile_idx) == _extrinsics.end())
             _extrinsics.insert({ profile_idx, {} });
     }
@@ -138,6 +141,7 @@ namespace librealsense
 
     int extrinsics_graph::find_stream_profile(const stream_interface& p, bool add_if_not_there)
     {
+
         auto sp = p.shared_from_this();
         auto max = 0;
         for (auto&& kvp : _streams)
@@ -146,8 +150,11 @@ namespace librealsense
                 return kvp.first;
             max = std::max( max, kvp.first );
         }
-        if( !add_if_not_there )
+        if( ! add_if_not_there )
             return -1;
+        //auto vs = dynamic_cast< const video_stream_profile_interface * >( sp.get() );
+        LOG_INFO( rsutils::string::from() << "find stream profile adding at index" << max + 1 << " "
+                                          << p.get_stream_type());
         _streams[max + 1] = sp;
         return max + 1;
 
@@ -167,7 +174,188 @@ namespace librealsense
         }
 
         std::set<int> visited;
+
+        LOG_INFO( rsutils::string::from() << "trying to fetch from index" << from_idx << " "
+                                          << " to " << to_idx );
         return try_fetch_extrinsics(from_idx, to_idx, visited, extr);
+    }
+
+   //void extrinsics_graph::replace_profile( const stream_interface & orig_profile,
+   //                                         const stream_interface & new_profile,
+   //                                         rs2_extrinsics new_extr )
+   // {
+   //     // Use a unique_lock so we can manually unlock before calling try_fetch_extrinsics
+   //     std::unique_lock< std::mutex > lock( _mutex );
+   //     int orig_idx = find_stream_profile( orig_profile, false );
+   //     if( orig_idx == -1 )
+   //         throw std::runtime_error( "replace_profile: Original profile not found" );
+
+   //     // Correctly copy the old extrinsics map - note the correct syntax here
+   //     auto old_extrinsics = _extrinsics[orig_idx];
+   //     //make sure it is called only once 
+   //     //delete it from the maps
+   //     // register profile
+   //     // register new extrinsics
+   //     // Store the corresponding indices and actual extrinsics values
+   //     struct connection_info
+   //     {
+   //         int idx;
+   //         rs2_extrinsics extr;
+   //         bool valid;
+   //     };
+   //     std::vector< connection_info > connections;
+
+   //     // First pass: collect all connected streams and their current extrinsics
+   //     for( const auto & edge : old_extrinsics )
+   //     {
+   //         int other_idx = edge.first;
+   //         auto stream_it = _streams.find( other_idx );
+   //         if( stream_it == _streams.end() )
+   //             continue;
+
+   //         auto other_stream = stream_it->second.lock();
+   //         if( ! other_stream )
+   //             continue;
+
+   //         // Temporarily release the lock to prevent deadlock
+   //         lock.unlock();
+
+   //         rs2_extrinsics current_extr;
+   //         bool fetched = try_fetch_extrinsics( orig_profile, *other_stream, &current_extr );
+
+   //         // Reacquire the lock
+   //         lock.lock();
+
+   //         connections.push_back( { other_idx, current_extr, fetched } );
+   //     }
+
+   //     // Remove old profile references
+   //     _streams.erase( orig_idx );
+   //     _extrinsics.erase( orig_idx );
+
+   //     for( auto & kvp : _extrinsics )
+   //     {
+   //         kvp.second.erase( orig_idx );
+   //     }
+
+   //     // Register the new profile
+   //     _streams[orig_idx] = new_profile.shared_from_this();
+   //     _extrinsics[orig_idx] = {};
+
+   //     // For each previously connected stream, rebuild the connection
+   //     for( const auto & conn : connections )
+   //     {
+   //         int other_idx = conn.idx;
+
+   //         if( ! conn.valid )
+   //             continue;  // Skip if we couldn't get the original extrinsics
+
+   //         // Calculate new extrinsics using the original extrinsics and the transformation
+   //         // provided for the new profile
+   //         //rs2_extrinsics composed_extr = compose_extrinsics( new_extr, conn.extr );
+
+   //         // Create a lazy for the composed extrinsics
+   //         auto lazy_extr = std::make_shared< rsutils::lazy< rs2_extrinsics > >( [=]() { return composed_extr; } );
+
+   //         // Update the graph
+   //         _extrinsics[orig_idx][other_idx] = lazy_extr;
+
+   //         if( _extrinsics.find( other_idx ) != _extrinsics.end() )
+   //             _extrinsics[other_idx][orig_idx] = std::shared_ptr< rsutils::lazy< rs2_extrinsics > >( nullptr );
+
+   //         _external_extrinsics.push_back( lazy_extr );
+   //     }
+   // }
+
+    void extrinsics_graph::delete_profile(const stream_interface& profile) {
+
+        // Find the original profile; if not found, throw an error.
+        int orig_idx = find_stream_profile( profile, false );
+        if( orig_idx == -1 )
+            throw std::runtime_error( "delete_profile: profile not found" );
+        
+        auto vs = dynamic_cast< const video_stream_profile_interface * >( &profile );
+        // Second, register new extrinsics
+
+        LOG_INFO( rsutils::string::from()
+                  << "deleting profile from index" << orig_idx << " " << profile.get_stream_type() << "format"
+                  << vs->get_format() << " height " << vs->get_height() << " width " << vs->get_width() );
+
+        // Remove the old profile from the internal maps.
+        _streams.erase( orig_idx );
+        _extrinsics.erase( orig_idx );
+        for( auto & kvp : _extrinsics )
+            kvp.second.erase( orig_idx );
+    }
+
+    void extrinsics_graph::replace_profile( const stream_interface & orig_profile,
+                                            const stream_interface & new_profile,
+                                            rs2_extrinsics new_extr )
+    {
+        // Helper structure to store connection info from the old profile
+        struct connection_info
+        {
+            int idx;
+            std::shared_ptr< const stream_interface > connected_stream;
+        };
+
+        std::vector< connection_info > connections;
+
+        {
+            // Lock the mutex to safely access and modify internal maps.
+            std::unique_lock< std::mutex > lock( _mutex );
+
+            // Find the original profile; if not found, throw an error.
+            int orig_idx = find_stream_profile( orig_profile, false );
+            if( orig_idx == -1 )
+                throw std::runtime_error( "replace_profile: Original profile not found" );
+
+            // Collect connections from the original profile.
+            // (We don’t need to fetch the extrinsics since we'll use new_extr directly.)
+            auto old_connections = _extrinsics[orig_idx];
+            for( const auto & edge : old_connections )
+            {
+                int other_idx = edge.first;
+                auto stream_it = _streams.find( other_idx );
+                if( stream_it == _streams.end() )
+                    continue;
+
+                auto connected_stream = stream_it->second.lock();
+                if( ! connected_stream )
+                    continue;
+
+                connections.push_back( connection_info{ other_idx, connected_stream } );
+            }
+
+            // Remove the old profile from the internal maps.
+            _streams.erase( orig_idx );
+            _extrinsics.erase( orig_idx );
+
+            for( auto & kvp : _extrinsics )
+                kvp.second.erase( orig_idx );
+
+            auto vs = dynamic_cast< const video_stream_profile_interface * >( &orig_profile );
+            LOG_INFO( rsutils::string::from()
+                      << "deleting profile from index" << orig_idx << " " << orig_profile.get_stream_type() << "format"
+                      << vs->get_format() << " height " << vs->get_height() << " width " << vs->get_width() );
+        }
+        // The lock is now released.
+
+        // Register the new profile using the existing routine.
+        // This will create a new node/index for the profile.
+        register_profile( new_profile );
+
+        // For each previously connected stream, re-establish the connection using new_extr.
+        for( const auto & conn : connections )
+        {
+            // Use register_extrinsics to add the new connection.
+            // This function takes care of creating a lazy extrinsics object internally.
+            register_extrinsics( *conn.connected_stream, new_profile, new_extr );
+        }
+
+        int new_idx = find_stream_profile( new_profile, false ); //registers new idx but the prev was not deleted
+        auto new_connections = _extrinsics[new_idx];
+        auto streams = _streams;
     }
 
     bool extrinsics_graph::try_fetch_extrinsics(int from, int to, std::set<int>& visited, rs2_extrinsics* extr)
