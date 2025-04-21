@@ -940,7 +940,7 @@ namespace rs2
 
     void on_chip_calib_manager::calibrate()
     {
-        int occ_timeout_ms = 9000;
+        int occ_timeout_ms = 36000;
         if (action == RS2_CALIB_ACTION_ON_CHIP_OB_CALIB || action == RS2_CALIB_ACTION_ON_CHIP_FL_CALIB)
         {
             if (toggle)
